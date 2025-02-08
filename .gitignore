@@ -1,0 +1,10 @@
+qwy_*
+launch.json
+*.txt
+node_modules/
+.eslintcache
+.messages
+.codewait
+__pycache__/
+.history/
+changelog.config.js
