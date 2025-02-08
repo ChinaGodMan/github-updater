@@ -1,0 +1,19 @@
+{
+    "download_fail": "下载失败，HTTP 状态码: {status_code}",
+    "download_success": "文件已成功下载到: {output_path}",
+    "error_occurred": "发生错误: {e}",
+    "func_not_exist": "函数 {function_name} 不存在于 {plugin_path} 中",
+    "latest_version": "{section_name} 最新版本: {latest_version}",
+    "local_version": "{section_name} 本地版本: {local_version}",
+    "local_version_fail": "{section_name} 本地版本检查失败",
+    "new_version": "发现新版本，正在更新 {section_name}",
+    "download_url": "下载地址: {download_url}, 保存路径: {save_path}",
+    "up_to_date": "{section_name} 已是最新版本，无需更新。",
+    "menu_header_num": "序号",
+    "menu_header_name": "名称",
+    "menu_header_func": "功能",
+    "menu_exit": "退出程序",
+    "menu_choose": "请输入数字选择功能 (输入 0 退出程序)：",
+    "menu_invalid": "无效选择，请重新输入。",
+    "program_title": "GitHub软件更新程序"
+}

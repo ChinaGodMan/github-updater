@@ -1,0 +1,19 @@
+{
+    "download_fail": "Download failed, HTTP status code: {status_code}",
+    "download_success": "File successfully downloaded to: {output_path}",
+    "error_occurred": "An error occurred: {e}",
+    "func_not_exist": "Function {function_name} does not exist in {plugin_path}",
+    "latest_version": "{section_name} latest version: {latest_version}",
+    "local_version": "{section_name} local version: {local_version}",
+    "local_version_fail": "{section_name} local version check failed",
+    "new_version": "New version found, updating {section_name}",
+    "download_url": "Download URL: {download_url}, save path: {save_path}",
+    "up_to_date": "{section_name} is already up-to-date.",
+    "menu_header_num": "No.",
+    "menu_header_name": "Name",
+    "menu_header_func": "Feature",
+    "menu_exit": "Exit program.",
+    "menu_choose": "Please enter a number to choose a function (Enter 0 to exit):",
+    "menu_invalid": "Invalid choice, please try again.",
+    "program_title": "GitHub Software Update Program"
+}

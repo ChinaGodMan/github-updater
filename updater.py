@@ -4,20 +4,43 @@ import requests
 import requests as rq
 import importlib.util
 import tempfile
+import json
+import inspect
+import locale
 from tabulate import tabulate
-# 动态获取
-ChinaGodMan_U = os.getenv("ChinaGodMan_U", "C:")
-temp_dir = tempfile.gettempdir()
-current_file_path = os.path.abspath(__file__)
-current_dir = os.path.dirname(current_file_path)
+
+
+def get_country():
+    locale_info = locale.getdefaultlocale()
+    if locale_info and locale_info[0]:
+        return locale_info[0]
+    return None
+
+
+def load_messages(json_path):
+    with open(json_path, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def translate(key, **kwargs):
+    message = messages.get(key, f"[{key}]")
+    caller_locals = inspect.currentframe().f_back.f_locals
+    context = {**caller_locals, **kwargs}
+    return message.format(**context)
+
+
+def load_ini(file_path):
+    """加载 ini 配置文件"""
+    config = configparser.ConfigParser()
+    config.read(file_path, encoding="utf-8")
+    return config
 
 
 def download_file(url, output_path):
-    """下载文件并显示进度"""
     try:
         with requests.get(url, stream=True) as response:
             if response.status_code != 200:
-                print(f"下载失败，HTTP 状态码: {response.status_code}")
+                print(translate("download_fail", status_code=response.status_code))
                 return
 
             total_size = int(response.headers.get('Content-Length', 0))
@@ -31,23 +54,14 @@ def download_file(url, output_path):
                         if total_size > 0:
                             percent_complete = (
                                 downloaded_size / total_size) * 100
-                            print(
-                                f"\r下载中: {percent_complete:.2f}% 已完成", end='')
+                            print(f"\r{translate('downloading')} {percent_complete:.2f}%", end='')
 
-        print(f"\n文件已成功下载到: {output_path}")
+        print(translate("download_success", output_path=output_path))
     except Exception as e:
-        print(f"发生错误: {e}")
-
-
-def load_ini(file_path):
-    """加载 ini 配置文件"""
-    config = configparser.ConfigParser()
-    config.read(file_path, encoding="utf-8")
-    return config
+        print(translate("error_occurred", error=e))
 
 
 def execute_plugin(plugin_path, function_name, env):
-    """动态加载插件并执行函数"""
     try:
         spec = importlib.util.spec_from_file_location(
             "plugin_module", plugin_path)
@@ -61,10 +75,10 @@ def execute_plugin(plugin_path, function_name, env):
             func = getattr(module, function_name)
             return func()
         else:
-            print(f"函数 {function_name} 不存在于 {plugin_path} 中")
+            print(translate('func_not_exist'))
             return None
     except Exception as e:
-        print(f"执行插件时出错: {e}")
+        print(translate('error_occurred'))
         return None
 
 
@@ -83,7 +97,6 @@ def CheckReleaseVersion(CHECKURL):
 
 
 def process_section(section_name, config):
-    """处理配置节内容"""
     description = config.get(section_name, "description")
     release_url = config.get(section_name, "release_url")
     download_url = config.get(section_name, "download_url")
@@ -91,58 +104,70 @@ def process_section(section_name, config):
         ChinaGodMan_U=ChinaGodMan_U)
     save_path = config.get(section_name, "save_path")
     plugin = os.path.join(current_dir, "utils", config.get(section_name, "plugin"))
-    print(f" {plugin}")
     check_version = config.get(section_name, "check_version")
     done = config.get(section_name, "done")
 
     # 检查最新版本
     latest_version = CheckReleaseVersion(release_url)
-    env = ["save_path", save_path, "version", "1.2.3"]
-    print(f"{section_name} 最新版本: {latest_version}")
+    env = ["save_path", save_path, "ChinaGodMan_U", ChinaGodMan_U]
+    print(translate('latest_version'))
     if latest_version is None:
         latest_version = execute_plugin(plugin, check_version, env)
 
     # 检查本地版本
     local_version = execute_plugin(plugin, check_version, env)
-    print(f"{section_name} 本地版本: {local_version}")
+    print(translate('local_version'))
     if local_version is None:
-        print(f"{section_name} 本地版本检查失败")
+        print(translate('local_version_fail'))
         return
 
     save_path = save_path.format(
         temp_dir=temp_dir, lasted_version=latest_version, ChinaGodMan_U=ChinaGodMan_U)
     if latest_version != local_version:
-        print(f"发现新版本，正在更新 {section_name}")
+        print(translate('new_version'))
         download_url = download_url.format(lasted_version=latest_version)
-        print(f"下载地址: {download_url}, 保存路径: {save_path}")
-        download_file(download_url, save_path)
+        print(translate('download_url'))
         env = ["save_path", save_path, "lasted_version", latest_version, "ChinaGodMan_U", ChinaGodMan_U, "unzip_folder", unzip_folder]
+        hook_down = config.get(section_name, "hook_download", fallback=None)
+        if hook_down:
+            download_url = execute_plugin(plugin, hook_down, env)
+        download_file(download_url, save_path)
         execute_plugin(plugin, done, env)
     else:
-        print(f"{section_name} 已是最新版本，无需更新。")
+        print(translate('up_to_date'))
 
 
-ini_file_path = fr"{current_dir}\softs.ini"
+# 初始化
+ChinaGodMan_U = os.getenv("ChinaGodMan_U", "C:")
+temp_dir = tempfile.gettempdir()
+current_file_path = os.path.abspath(__file__)
+current_dir = os.path.dirname(current_file_path)
+country = get_country()
+locales_path = f"{current_dir}\\locales\\{country}"
+country = country if os.path.isdir(locales_path) else "en"
+messages_path = f"{current_dir}\\locales\\{country}\\messages.json"
+messages = load_messages(messages_path)
+ini_file_path = f"{current_dir}\\softs.ini"
 config = load_ini(ini_file_path)
-print("GitHub软件更新程序")
+print(translate("program_title"))
 menu = []
 for index, section in enumerate(config.sections(), start=1):
     description = config.get(section, "description")
     menu.append([str(index), section, description])
 
-menu.append(["0", "退出", "退出程序"])
+menu.append(["0", translate("menu_exit"), translate("menu_exit")])
 # 居中
 colalign = ("center", "center", "center")
-print(tabulate(menu, headers=["序号", "名称", "功能"],
+print(tabulate(menu, headers=[translate("menu_header_num"), translate("menu_header_name"), translate("menu_header_func")],
       tablefmt="fancy_grid", colalign=colalign))
 
 while True:
-    choice = input("请输入数字选择功能 (输入 0 退出程序)：")
+    choice = input(translate("menu_choose"))
     if choice == "0":
-        print("退出程序。")
+        print(translate("menu_exit"))
         break
     elif choice.isdigit() and 1 <= int(choice) <= len(config.sections()):
         section_name = config.sections()[int(choice) - 1]
         process_section(section_name, config)
     else:
-        print("无效选择，请重新输入。")
+        print(translate("menu_invalid"))
