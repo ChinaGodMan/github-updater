@@ -41,7 +41,7 @@ def download_file(url, output_path):
         with requests.get(url, stream=True) as response:
             if response.status_code != 200:
                 print(translate("download_fail", status_code=response.status_code))
-                return
+                return False
 
             total_size = int(response.headers.get('Content-Length', 0))
             with open(output_path, 'wb') as file:
@@ -57,8 +57,10 @@ def download_file(url, output_path):
                             print(f"\r{translate('downloading')} {percent_complete:.2f}%", end='')
 
         print(translate("download_success", output_path=output_path))
+        return True
     except Exception as e:
         print(translate("error_occurred", error=e))
+        return False
 
 
 def execute_plugin(plugin_path, function_name, env):
@@ -96,12 +98,18 @@ def CheckReleaseVersion(CHECKURL):
         return "error"
 
 
+def lazy_format(str):
+    frame = inspect.currentframe().f_back
+    context = {**frame.f_globals, **frame.f_locals}
+
+    return str.format(**context)
+
+
 def process_section(section_name, config):
     description = config.get(section_name, "description")
     release_url = config.get(section_name, "release_url")
     download_url = config.get(section_name, "download_url")
-    unzip_folder = config.get(section_name, "unzip_folder").format(
-        ChinaGodMan_U=ChinaGodMan_U)
+    unzip_folder = lazy_format(config.get(section_name, "unzip_folder"))
     save_path = config.get(section_name, "save_path")
     plugin = os.path.join(current_dir, "utils", config.get(section_name, "plugin"))
     check_version = config.get(section_name, "check_version")
@@ -120,19 +128,17 @@ def process_section(section_name, config):
     if local_version is None:
         print(translate('local_version_fail'))
         return
-
-    save_path = save_path.format(
-        temp_dir=temp_dir, lasted_version=latest_version, ChinaGodMan_U=ChinaGodMan_U)
+    save_path = lazy_format(save_path)
     if latest_version != local_version:
         print(translate('new_version'))
-        download_url = download_url.format(lasted_version=latest_version)
+        download_url = lazy_format(download_url)
         print(translate('download_url'))
-        env = ["save_path", save_path, "lasted_version", latest_version, "ChinaGodMan_U", ChinaGodMan_U, "unzip_folder", unzip_folder]
+        env = ["save_path", save_path, "latest_version", latest_version, "ChinaGodMan_U", ChinaGodMan_U, "unzip_folder", unzip_folder]
         hook_down = config.get(section_name, "hook_download", fallback=None)
         if hook_down:
             download_url = execute_plugin(plugin, hook_down, env)
-        download_file(download_url, save_path)
-        execute_plugin(plugin, done, env)
+        if download_file(download_url, save_path):
+            execute_plugin(plugin, done, env)
     else:
         print(translate('up_to_date'))
 
