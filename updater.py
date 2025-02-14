@@ -114,10 +114,13 @@ def process_section(section_name, config):
     plugin = os.path.join(current_dir, "utils", config.get(section_name, "plugin"))
     check_version = config.get(section_name, "check_version")
     done = config.get(section_name, "done")
-
-    # 检查最新版本
-    latest_version = CheckReleaseVersion(release_url)
     env = ["save_path", save_path, "ChinaGodMan_U", ChinaGodMan_U]
+    # 检查最新版本
+    hook_check_version = config.get(section_name, "hook_check_lasted_github", fallback=None)
+    if hook_check_version:
+        latest_version = execute_plugin(plugin, hook_check_version, env)
+    else:
+        latest_version = CheckReleaseVersion(release_url)
     print(translate('latest_version'))
     if latest_version is None:
         latest_version = execute_plugin(plugin, check_version, env)
@@ -132,11 +135,11 @@ def process_section(section_name, config):
     if latest_version != local_version:
         print(translate('new_version'))
         download_url = lazy_format(download_url)
-        print(translate('download_url'))
         env = ["save_path", save_path, "latest_version", latest_version, "ChinaGodMan_U", ChinaGodMan_U, "unzip_folder", unzip_folder]
         hook_down = config.get(section_name, "hook_download", fallback=None)
         if hook_down:
             download_url = execute_plugin(plugin, hook_down, env)
+        print(translate('download_url'))
         if download_file(download_url, save_path):
             execute_plugin(plugin, done, env)
     else:
