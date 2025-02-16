@@ -28,7 +28,7 @@ def replace_text_in_file(file_path, pattern, replacement):
 
 
 def update_version():
-    file_path = fr"{ChinaGodMan_U}\GitHub\disk\PortableInstall\ConfigFiles\UnzipConfig.json"
+    file_path = fr"{ChinaGodMan_U}\GitHub\disk\PortableInstall\ConfigFiles\portable-app-config.json"
     print(file_path)
     pattern = r"(?<=/ZIP/VSCode/VSCode-win32-x64-).*?(?=\.zip)"
-    replace_text_in_file(file_path, pattern, lasted_version)
+    replace_text_in_file(file_path, pattern, latest_version)

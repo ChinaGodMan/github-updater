@@ -39,7 +39,7 @@ def unzip():
     print(f"开始解压{save_path}")
     command = f'7z x "{save_path}" -o"{unzip_folder}"  -y'
     os.system(command)
-    src_folder = os.path.join(unzip_folder, f"scrcpy-win64-v{lasted_version}")
+    src_folder = os.path.join(unzip_folder, f"scrcpy-win64-v{latest_version}")
     clear_folder(unzip_folder)
     if os.path.exists(src_folder):
         for item in os.listdir(src_folder):
