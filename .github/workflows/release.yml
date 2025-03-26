@@ -1,0 +1,62 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*" # 只对以 'v' 开头的标签触发（例如 v1.0, v2.0.0)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate changelog
+        id: changelog
+        uses: jaywcjlove/changelog-generator@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filter-author: (dependabot\[bot\]|Renovate Bot)
+          filter: '[R|r]elease[d]\s+[v|V]\d(\.\d+){0,2}'
+          custom-emoji: "type🐝,feat💄,fix🆎"
+          order: desc
+          template: |
+            ## Bugs
+            {{fix,bug}}
+
+            ## Feature
+            {{feat}}
+
+            ## Improve
+            {{refactor,perf,clean}}
+
+            ## Misc
+            {{chore,style,ci,docs,doc,test,script||🔶 Nothing change}}
+
+            ## Other
+            {{__unknown__}}
+
+      - name: Print Changelog
+        run: |
+          echo "Changelog:"
+          echo "GitHub Pages Hash: ${{ steps.changelog.outputs.gh-pages-hash }}"
+          echo "Compare URL: ${{ steps.changelog.outputs.compareurl }}"
+          echo "Compare URL: ${{ steps.changelog.outputs.compareurl }}" > note.md
+          echo "${{ steps.changelog.outputs.changelog }}"
+          echo "${{ steps.changelog.outputs.changelog }}" >> note.md
+
+      - name: Extract tag name
+        id: extract_tag
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          echo "Extracted tag name: $TAG_NAME"
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+
+      - name: Release
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          body: |
+            ${{ steps.changelog.outputs.changelog }}
+            Compare URL: ${{ steps.changelog.outputs.compareurl }}
