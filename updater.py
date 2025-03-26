@@ -10,6 +10,9 @@ import locale
 from tabulate import tabulate
 
 
+os.system('mode con: cols=150 lines=30')
+
+
 def get_country():
     locale_info = locale.getdefaultlocale()
     if locale_info and locale_info[0]:
@@ -80,7 +83,7 @@ def execute_plugin(plugin_path, function_name, env):
             print(translate('func_not_exist'))
             return None
     except Exception as e:
-        print(translate('error_occurred'))
+        print(f"{translate('error_occurred')}: {e}")
         return None
 
 
@@ -94,7 +97,7 @@ def CheckReleaseVersion(CHECKURL):
             return version
         else:
             return "error"
-    except:
+    except Exception:
         return "error"
 
 
@@ -106,7 +109,6 @@ def lazy_format(str):
 
 
 def process_section(section_name, config):
-    description = config.get(section_name, "description")
     release_url = config.get(section_name, "release_url")
     download_url = config.get(section_name, "download_url")
     unzip_folder = lazy_format(config.get(section_name, "unzip_folder"))
